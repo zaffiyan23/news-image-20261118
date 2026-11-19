@@ -153,14 +153,114 @@ CONTINENTS = [
 ]
 
 
-def draw_world_map(draw, x, y, cell=6):
+def draw_world_map(draw, x, y, cell=6, scale=1.0):
+    dot = max(2, int(3 * scale))
     for gy in range(0, 100, cell):
         for gx in range(0, 212, cell):
             for cx, cy, rx, ry in CONTINENTS:
                 if ((gx - cx) / rx) ** 2 + ((gy - cy) / ry) ** 2 <= 1.0:
-                    draw.ellipse([x + gx, y + gy, x + gx + 3, y + gy + 3],
-                                 fill=INK)
+                    dx = x + gx * scale
+                    dy = y + gy * scale
+                    draw.ellipse([dx, dy, dx + dot, dy + dot], fill=INK)
                     break
+
+
+# ------------------------------------------------------- illustrations
+# Flat editorial pictograms drawn with PIL shapes in the poster's own
+# ink and red - original artwork made for this entry, in one style:
+# a big lead picture of the Shenzhen summit, and a small spot picture
+# beside every section title.
+
+def draw_lead_art(draw, x, y, w, h):
+    """The APEC lead picture: Shenzhen skyline, a red sun, and two
+    leaders meeting in silhouette in front of it."""
+    draw.rectangle([x, y, x + w, y + h], outline=INK, width=2)
+    ground = y + h - 34
+    # Red sun over the skyline.
+    draw.ellipse([x + w - 92, y + 14, x + w - 40, y + 66], fill=RED)
+    # Skyline: dark towers of different heights, lit windows as dots.
+    towers = [(8, 62), (34, 88), (62, 52), (88, 96), (118, 70),
+              (146, 84), (300, 58), (326, 90), (354, 66), (380, 80),
+              (408, 56), (434, 92)]
+    for tx, th in towers:
+        if tx + 24 > w - 8:
+            continue
+        draw.rectangle([x + tx, ground - th, x + tx + 22, ground],
+                       fill=INK)
+        for wy in range(ground - th + 7, ground - 8, 11):
+            for wx in (x + tx + 5, x + tx + 13):
+                draw.rectangle([wx, wy, wx + 3, wy + 4], fill=PAPER)
+    draw.line([(x, ground), (x + w, ground)], fill=INK, width=2)
+    # Two figures meeting in the open plaza between the towers:
+    # heads, suit bodies, arms reaching to a handshake at the centre.
+    cx = x + w // 2
+    for side in (-1, 1):
+        hx = cx + side * 46
+        draw.ellipse([hx - 13, ground - 84, hx + 13, ground - 58], fill=INK)
+        draw.polygon([(hx - 19, ground), (hx - 12, ground - 58),
+                      (hx + 12, ground - 58), (hx + 19, ground)], fill=INK)
+        draw.line([(hx - side * 6, ground - 44), (cx, ground - 30)],
+                  fill=INK, width=7)
+        draw.polygon([(hx - 3, ground - 56), (hx + 5, ground - 56),
+                      (hx + 1, ground - 38)], fill=RED)
+    draw.ellipse([cx - 6, ground - 36, cx + 6, ground - 24], fill=RED)
+    caption = font(SANS_ITALIC, 11)
+    draw.text((x + 8, y + h - 24), "Leaders meet as APEC opens in Shenzhen.",
+              font=caption, fill=GREY)
+
+
+def draw_icon(draw, name, x, y):
+    """A 30x30 spot illustration for a section, at (x, y)."""
+    if name == "cyclone":
+        for r in (13, 9, 5):
+            draw.arc([x + 15 - r, y + 15 - r, x + 15 + r, y + 15 + r],
+                     start=20, end=300, fill=INK, width=2)
+        draw.ellipse([x + 13, y + 13, x + 17, y + 17], fill=RED)
+    elif name == "tanker":
+        draw.polygon([(x + 2, y + 18), (x + 28, y + 18), (x + 24, y + 25),
+                      (x + 6, y + 25)], fill=INK)
+        draw.rectangle([x + 7, y + 11, x + 14, y + 18], fill=RED)
+        draw.rectangle([x + 16, y + 13, x + 23, y + 18], fill=INK)
+        draw.arc([x + 2, y + 22, x + 14, y + 30], 0, 180, fill=INK, width=2)
+        draw.arc([x + 16, y + 22, x + 28, y + 30], 0, 180, fill=INK, width=2)
+    elif name == "drone":
+        for dx, dy in ((4, 4), (22, 4), (4, 22), (22, 22)):
+            draw.ellipse([x + dx, y + dy, x + dx + 5, y + dy + 5],
+                         outline=INK, width=2)
+        draw.line([(x + 6, y + 6), (x + 24, y + 24)], fill=INK, width=2)
+        draw.line([(x + 24, y + 6), (x + 6, y + 24)], fill=INK, width=2)
+        draw.rectangle([x + 12, y + 12, x + 18, y + 18], fill=RED)
+    elif name == "dome":
+        draw.arc([x + 5, y + 2, x + 25, y + 18], 180, 360, fill=INK, width=2)
+        draw.line([(x + 15, y + 2), (x + 15, y - 2 + 4)], fill=RED, width=2)
+        for cx in (7, 12, 17, 22):
+            draw.line([(x + cx, y + 14), (x + cx, y + 24)], fill=INK, width=2)
+        draw.line([(x + 3, y + 26), (x + 27, y + 26)], fill=INK, width=2)
+    elif name == "chip":
+        draw.rectangle([x + 7, y + 7, x + 23, y + 23], outline=INK, width=2)
+        draw.rectangle([x + 12, y + 12, x + 18, y + 18], fill=RED)
+        for p in (10, 15, 20):
+            draw.line([(x + p, y + 2), (x + p, y + 7)], fill=INK, width=2)
+            draw.line([(x + p, y + 23), (x + p, y + 28)], fill=INK, width=2)
+            draw.line([(x + 2, y + p), (x + 7, y + p)], fill=INK, width=2)
+            draw.line([(x + 23, y + p), (x + 28, y + p)], fill=INK, width=2)
+    elif name == "satellite":
+        draw.rectangle([x + 12, y + 11, x + 19, y + 19], fill=INK)
+        draw.rectangle([x + 2, y + 8, x + 10, y + 15], fill=RED)
+        draw.rectangle([x + 21, y + 15, x + 29, y + 22], fill=RED)
+        draw.arc([x + 14, y + 16, x + 30, y + 30], 270, 360, fill=INK,
+                 width=2)
+        draw.ellipse([x + 26, y + 24, x + 29, y + 27], fill=INK)
+
+
+SECTION_ICONS = {
+    "ASIA-PACIFIC": "cyclone",
+    "MIDDLE EAST": "tanker",
+    "EUROPE": "drone",
+    "AMERICAS": "dome",
+    "BUSINESS & TECH": "chip",
+    "SCIENCE & WORLD": "satellite",
+}
 
 
 # ------------------------------------------------------------- text help
@@ -191,7 +291,10 @@ def draw_wrapped(draw, x, y, text, fnt, fill, max_width, leading):
 def draw_section(draw, x, y, width, title, items):
     title_font = font(SANS_BOLD, 15)
     body_font = font(SANS, 13)
-    draw.text((x, y), title, font=title_font, fill=RED)
+    icon = SECTION_ICONS.get(title)
+    if icon:
+        draw_icon(draw, icon, x, y - 4)
+    draw.text((x + 36, y), title, font=title_font, fill=RED)
     y += 20
     draw.line([(x, y), (x + width, y)], fill=INK, width=1)
     y += 6
@@ -269,7 +372,8 @@ def build():
 
     # -------------------------------------------------------------- lead
     lead_x = MARGIN + 6
-    lead_w = 600
+    lead_w = 462
+    lead_top = y
     kicker_font = font(SANS_BOLD, 14)
     draw.text((lead_x, y), "LEAD STORY \u00b7 APEC SUMMIT \u00b7 SHENZHEN",
               font=kicker_font, fill=RED)
@@ -285,12 +389,10 @@ def build():
                          lead_w - 14, 16)
         y += 2
 
-    # Dot-grid world map beside the lead.
-    map_x = lead_x + lead_w + 18
-    draw_world_map(draw, map_x, 186, cell=6)
-    map_caption = font(SANS_ITALIC, 11)
-    draw.text((map_x + 58, 292), "One day, every region.",
-              font=map_caption, fill=GREY)
+    # The lead picture beside the lead text.
+    art_x = lead_x + lead_w + 18
+    draw_lead_art(draw, art_x, lead_top, WIDTH - MARGIN - art_x,
+                  max(150, y - lead_top - 4))
 
     lead_bottom = y + 8
     draw.line([(MARGIN, lead_bottom), (WIDTH - MARGIN, lead_bottom)],
@@ -314,9 +416,17 @@ def build():
             draw.line([(vx, col_top), (vx, columns_bottom + 2)],
                       fill=RULE, width=1)
 
-    # Key-figures panel fills the page under the columns.
-    draw_numbers_panel(draw, MARGIN + 6, columns_bottom + 4,
-                       WIDTH - 2 * MARGIN - 12)
+    # One band of the day's key figures under the columns.
+    band_y = columns_bottom + 2
+    band_title = font(SANS_BOLD, 14)
+    draw.text((MARGIN + 6, band_y), "THE DAY IN NUMBERS", font=band_title,
+              fill=RED)
+    band_font = font(SANS_BOLD, 13)
+    band_text = ("141 drones launched, 126 downed  \u00b7  950,000 displaced in Gaza  \u00b7  "
+                 "EUR 45bn for Ukraine  \u00b7  oil $93  \u00b7  Senate 56-44  \u00b7  "
+                 "Voyager 1 at one light-day")
+    draw_wrapped(draw, MARGIN + 6, band_y + 20, band_text, band_font, INK,
+                 WIDTH - 2 * MARGIN - 12, 17)
 
     # ---------------------------------------------------- sequence strip
     seq_y = 862

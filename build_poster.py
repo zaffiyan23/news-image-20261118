@@ -15,7 +15,12 @@ headline data below, never typed by hand, so it always matches the
 number of stories actually printed on the page.
 """
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
+
+# The hero picture of the day: Trump, Xi and Putin at the Shenzhen
+# summit, an original editorial illustration made for this entry and
+# kept in the repository beside this program.
+HERO_PATH = "assets/hero-summit.webp"
 
 # ---------------------------------------------------------------- palette
 PAPER = "#f7f3e8"
@@ -98,9 +103,9 @@ SECTIONS = [
 
 # Which sections go in which of the three columns under the lead block.
 COLUMNS = [
-    ["ASIA-PACIFIC", "EUROPE"],
+    ["ASIA-PACIFIC", "SCIENCE & WORLD"],
     ["MIDDLE EAST"],
-    ["AMERICAS", "BUSINESS & TECH", "SCIENCE & WORLD"],
+    ["AMERICAS", "BUSINESS & TECH", "EUROPE"],
 ]
 
 SEQUENCE = [
@@ -289,22 +294,22 @@ def draw_wrapped(draw, x, y, text, fnt, fill, max_width, leading):
 
 
 def draw_section(draw, x, y, width, title, items):
-    title_font = font(SANS_BOLD, 15)
-    body_font = font(SANS, 13)
+    title_font = font(SANS_BOLD, 14)
+    body_font = font(SANS, 12)
     icon = SECTION_ICONS.get(title)
     if icon:
-        draw_icon(draw, icon, x, y - 4)
+        draw_icon(draw, icon, x, y - 5)
     draw.text((x + 36, y), title, font=title_font, fill=RED)
-    y += 20
+    y += 19
     draw.line([(x, y), (x + width, y)], fill=INK, width=1)
-    y += 6
+    y += 5
     for item in items:
         bullet_x = x + 10
         draw.text((x, y), "\u2022", font=body_font, fill=RED)
         y = draw_wrapped(draw, bullet_x, y, item, body_font, INK,
-                          width - 12, 16)
-        y += 3
-    return y + 8
+                          width - 12, 14)
+        y += 1
+    return y + 6
 
 
 # The day's key figures, every one of them taken from a headline
@@ -348,18 +353,18 @@ def build():
     draw.rectangle([16, 16, WIDTH - 17, HEIGHT - 17], outline=INK, width=1)
 
     # ---------------------------------------------------------- masthead
-    y = 26
-    masthead = font(SERIF_BOLD, 46)
+    y = 24
+    masthead = font(SERIF_BOLD, 42)
     title = "THE WORLD IN ONE PAGE"
     tw = draw.textlength(title, font=masthead)
     draw.text(((WIDTH - tw) / 2, y), title, font=masthead, fill=INK)
-    y += 58
+    y += 52
 
-    date_font = font(SERIF_BOLD, 34)
+    date_font = font(SERIF_BOLD, 32)
     date_text = "Wednesday, 18 November 2026"
     tw = draw.textlength(date_text, font=date_font)
     draw.text(((WIDTH - tw) / 2, y), date_text, font=date_font, fill=RED)
-    y += 48
+    y += 44
 
     # Black strip with the counted story total.
     strip_font = font(SANS_BOLD, 16)
@@ -370,31 +375,42 @@ def build():
               fill=PAPER)
     y += 40
 
-    # -------------------------------------------------------------- lead
-    lead_x = MARGIN + 6
-    lead_w = 462
-    lead_top = y
-    kicker_font = font(SANS_BOLD, 14)
-    draw.text((lead_x, y), "LEAD STORY \u00b7 APEC SUMMIT \u00b7 SHENZHEN",
+    # ------------------------------------------------- hero picture
+    # The day's picture is the poster's spotlight: Trump, Xi and Putin
+    # at the Shenzhen summit, full width under the masthead.
+    hero_x = MARGIN
+    hero_w = WIDTH - 2 * MARGIN
+    hero_h = 288
+    hero = ImageOps.fit(Image.open(HERO_PATH).convert("RGB"),
+                        (hero_w, hero_h), centering=(0.5, 0.58))
+    img.paste(hero, (hero_x, y))
+    draw = ImageDraw.Draw(img)
+    draw.rectangle([hero_x, y, hero_x + hero_w - 1, y + hero_h - 1],
+                   outline=INK, width=3)
+    y += hero_h + 8
+
+    # Lead headline and its facts in two columns under the picture.
+    kicker_font = font(SANS_BOLD, 13)
+    draw.text((MARGIN + 6, y), "LEAD STORY \u00b7 APEC SUMMIT \u00b7 SHENZHEN",
               font=kicker_font, fill=RED)
-    y += 22
-    lead_font = font(SERIF_BOLD, 31)
-    y = draw_wrapped(draw, lead_x, y, LEAD_HEADLINE, lead_font, INK,
-                     lead_w, 36)
-    y += 4
-    lead_body = font(SANS, 13)
-    for bullet in LEAD_BULLETS:
-        draw.text((lead_x, y), "\u2022", font=lead_body, fill=RED)
-        y = draw_wrapped(draw, lead_x + 12, y, bullet, lead_body, INK,
-                         lead_w - 14, 16)
-        y += 2
+    y += 19
+    lead_font = font(SERIF_BOLD, 25)
+    y = draw_wrapped(draw, MARGIN + 6, y, LEAD_HEADLINE, lead_font, INK,
+                     hero_w - 12, 29)
+    lead_body = font(SANS, 12)
+    bullet_w = (hero_w - 24) // 2
+    bullet_top = y + 2
+    bullet_bottom = bullet_top
+    for i, bullet in enumerate(LEAD_BULLETS):
+        bx = MARGIN + 6 + (i % 2) * (bullet_w + 12)
+        by = bullet_top + (i // 2) * 32
+        draw.text((bx, by), "\u2022", font=lead_body, fill=RED)
+        by = draw_wrapped(draw, bx + 11, by, bullet, lead_body, INK,
+                          bullet_w - 12, 15)
+        bullet_bottom = max(bullet_bottom, by)
+    y = bullet_bottom + 4
 
-    # The lead picture beside the lead text.
-    art_x = lead_x + lead_w + 18
-    draw_lead_art(draw, art_x, lead_top, WIDTH - MARGIN - art_x,
-                  max(150, y - lead_top - 4))
-
-    lead_bottom = y + 8
+    lead_bottom = y
     draw.line([(MARGIN, lead_bottom), (WIDTH - MARGIN, lead_bottom)],
               fill=INK, width=2)
 
@@ -418,29 +434,28 @@ def build():
 
     # One band of the day's key figures under the columns.
     band_y = columns_bottom + 2
-    band_title = font(SANS_BOLD, 14)
-    draw.text((MARGIN + 6, band_y), "THE DAY IN NUMBERS", font=band_title,
+    band_title = font(SANS_BOLD, 13)
+    draw.text((MARGIN + 6, band_y), "THE DAY IN NUMBERS:", font=band_title,
               fill=RED)
-    band_font = font(SANS_BOLD, 13)
-    band_text = ("141 drones launched, 126 downed  \u00b7  950,000 displaced in Gaza  \u00b7  "
-                 "EUR 45bn for Ukraine  \u00b7  oil $93  \u00b7  Senate 56-44  \u00b7  "
-                 "Voyager 1 at one light-day")
-    draw_wrapped(draw, MARGIN + 6, band_y + 20, band_text, band_font, INK,
-                 WIDTH - 2 * MARGIN - 12, 17)
+    band_font = font(SANS_BOLD, 12)
+    band_text = ("141 drones, 126 downed \u00b7 950,000 displaced \u00b7 EUR 45bn for Ukraine \u00b7 "
+                 "oil $93 \u00b7 Senate 56-44 \u00b7 Voyager 1 at one light-day")
+    draw_wrapped(draw, MARGIN + 162, band_y, band_text, band_font, INK,
+                 WIDTH - 2 * MARGIN - 168, 15)
 
     # ---------------------------------------------------- sequence strip
-    seq_y = 862
+    seq_y = 936
     draw.line([(MARGIN, seq_y), (WIDTH - MARGIN, seq_y)], fill=INK, width=2)
-    seq_title = font(SANS_BOLD, 14)
-    draw.text((MARGIN + 6, seq_y + 8), "THE DAY IN SEQUENCE (UTC)",
+    seq_title = font(SANS_BOLD, 13)
+    draw.text((MARGIN + 6, seq_y + 7), "THE DAY IN SEQUENCE (UTC):",
               font=seq_title, fill=RED)
-    seq_font = font(SANS_BOLD, 13)
+    seq_font = font(SANS_BOLD, 12)
     seq_text = "  \u2192  ".join(SEQUENCE)
-    y = draw_wrapped(draw, MARGIN + 6, seq_y + 30, seq_text, seq_font, INK,
-                     WIDTH - 2 * MARGIN - 12, 17)
+    draw_wrapped(draw, MARGIN + 210, seq_y + 7, seq_text, seq_font, INK,
+                 WIDTH - 2 * MARGIN - 216, 15)
 
     # -------------------------------------------------------------- footer
-    foot_y = 952
+    foot_y = 968
     draw.line([(MARGIN, foot_y), (WIDTH - MARGIN, foot_y)], fill=INK,
               width=1)
     foot_font = font(SANS, 12)

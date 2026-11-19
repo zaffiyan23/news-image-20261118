@@ -9,3 +9,6 @@ import { copyFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 copyFileSync(new URL('./entry.png', import.meta.url), join(process.env.MAKEFUN_OUTPUT_DIR ?? '/output', 'entry.png'));
+
+// Entry image: "The World in One Page" - 38 stories of Wednesday 18 November 2026,
+// drawn by build_poster.py in this repository and saved beside this file as entry.png.
